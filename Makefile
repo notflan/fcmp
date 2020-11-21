@@ -8,7 +8,7 @@ OPT_FLAGS+= -fgraphite
 RELEASE_CFLAGS?=  -O3 -march=native -flto $(OPT_FLAGS)
 RELEASE_LDFLAGS?= -O3 -flto
 
-DEBUG_CFLAGS?=  -O0 -g
+DEBUG_CFLAGS?=  -DDEBUG -O0 -g
 DEBUG_LDFLAGS?= -O0
 
 CFLAGS+= -Wall -pedantic --std=gnu11 $(addprefix -I,$(INCLUDE))
