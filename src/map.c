@@ -30,7 +30,7 @@ int open_and_map(const char* file, mmap_t* restrict ptr)
 	register struct mmap map = { .fd = fd, .ptr = NULL, .len = st.st_size };
 
 	if ((map.ptr = mmap(NULL, map.len, PROT_READ, MAP_SHARED,fd, 0)) == MAP_FAILED) {
-		perror("mmam() failed");
+		perror("mmap() failed");
 		close(fd);
 		return 0;
 	}
