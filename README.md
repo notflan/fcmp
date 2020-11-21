@@ -9,6 +9,8 @@ A small shell util that compares files for identity with `mmap()` and `memcmp()`
 $ fcmp file1 file2 && echo "Equal!"
 ```
 
+You can pass any number of files, but at least 2 must be provided.
+
 | Code | Meaning                                                      |
 |------|--------------------------------------------------------------|
 | 0    | The files are equal                                          |
