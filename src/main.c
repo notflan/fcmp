@@ -37,11 +37,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	if (map1.len != map2.len) return 2;
-
-	if (memcmp(map1.ptr, map2.ptr, map1.len) != 0) return 1;
-
 	register int rval=0;
+	if (map1.len != map2.len) rval = 2;
+	else if (memcmp(map1.ptr, map2.ptr, map1.len) != 0) rval = 1;
+
 	if(!unmap_and_close(map1)) {
 		fprintf(stderr, "Failed to unmap and close %s", f1);
 		rval=-1;
