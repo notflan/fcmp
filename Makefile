@@ -3,7 +3,7 @@ INCLUDE=include
 
 PROJECT=fcmp
 
-OPT_FLAGS+= -fgraphite -fno-strict-aliasing
+OPT_FLAGS+= -fgraphite
 
 RELEASE_CFLAGS?=  -O3 -march=native -flto $(OPT_FLAGS)
 RELEASE_LDFLAGS?= -O3 -flto
@@ -25,7 +25,7 @@ debug: | dirs $(PROJECT)-debug
 dirs:
 	@mkdir -p obj/src
 
-%.o: %.c
+obj/%.o: %.c
 	$(CC) -c $< $(CFLAGS) -o $@ $(LDFLAGS)
 
 $(PROJECT)-release: CFLAGS := $(RELEASE_CFLAGS) $(CFLAGS)

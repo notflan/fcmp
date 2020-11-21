@@ -8,6 +8,7 @@ static const char* _prog_name = "fcmp";
 
 __attribute__((noreturn)) void usage() 
 {
+	fprintf(stderr, "fcmp: compare files for identity\n");
 	fprintf(stderr, "usage: %s <file1> <file2>\n", _prog_name);
 	exit(-1);
 }
