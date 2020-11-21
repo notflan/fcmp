@@ -40,14 +40,14 @@ static int unmap_all(mmap_t ptrs[], size_t len)
 	return rval;
 }
 
-static int compare_then_close(const mmap_t * restrict map1, mmap_t* restrict map2)
+static int compare_then_close(const mmap_t * restrict map1, mmap_t map2)
 {
 	register int rval=0;
 
-	if (map1->len != map2->len) rval = 2;
-	else if (memcmp(map1->ptr, map2->ptr, map1->len) != 0) rval = 1;
+	if (map1->len != map2.len) rval = 2;
+	else if (memcmp(map1->ptr, map2.ptr, map1->len) != 0) rval = 1;
 
-	if(!unmap_and_close(*map2)) {
+	if(!unmap_and_close(map2)) {
 		fprintf(stderr, "Failed to unmap and close");
 		rval=-1;
 	}
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
 
 	for(register int i=0;i<nrest;i++) {
 		dprintf("Checking %d \"%s\"", i, frest[i]);
-		switch ((rval=compare_then_close(&map1, mrest+i))) {
+		switch ((rval=compare_then_close(&map1, mrest[i]))) {
 			case 0: break;
 			default:
 				// Close the rest
