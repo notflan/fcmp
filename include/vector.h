@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "fcmp.h"
+
 typedef struct {
 	size_t len, cap;
 
@@ -11,12 +13,6 @@ typedef struct {
 
 	void* ptr;
 } vec_t;
-
-#ifdef DEBUG
-#define _FORCE_INLINE static inline __attribute__((gnu_inline))
-#else
-#define _FORCE_INLINE extern inline __attribute__((gnu_inline))
-#endif
 
 #define VEC_DEFAULT_CAP 16
 

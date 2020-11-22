@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
+
+#include <fcmp.h>
+
 #include <map.h>
 #include <vector.h>
 
-static const char* _prog_name = "fcmp";
-
-#ifdef DEBUG
-#define __name(d) #d
-#define dprintf(fmt, ...) printf("[dbg @" __FILE__ "->%s:%d] " fmt "\n", __func__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
-#else
-#define dprintf(fmt, ...)
+#ifdef _RUN_THREADED
+#include <sched.h>
 #endif
+
+const char* _prog_name = "fcmp";
 
 __attribute__((noreturn, noinline)) void usage() 
 {
@@ -56,6 +56,57 @@ static int compare_then_close(const mmap_t * restrict map1, mmap_t map2)
 	return rval;
 }
 
+#ifdef _RUN_THREADED
+struct t_task {
+	_Atomic int* othis;
+
+	int ithis;
+	const char* fthis;
+	mmap_t mthis;
+	const mmap_t* map1;
+};
+
+void proc_thread(vec_t* restrict v_tasks)
+{
+	struct t_task * tasks = v_tasks->ptr;
+	mmap_t mrest[v_tasks->len];
+#ifdef DEBUG
+	const char* frest[v_tasks->len];
+#endif
+	int nrest = v_tasks->len;
+
+	const mmap_t* map1;
+
+	{
+		for(register int i=0;i<v_tasks->len;i++)
+		{
+			mrest[i] = tasks[i].mthis;
+#ifdef DEBUG
+			frest[i] = tasks[i].fthis;
+#endif
+		}
+		map1 = tasks[0].map1;
+	}
+	
+	register int rval=0;
+	for(register int i=0;i<nrest;i++)
+	{
+		dprintf("Checking %d \"%s\"", tasks[i].ithis, frest[i]);
+		switch ((rval=compare_then_close(map1, mrest[i]))) {
+			case 0: break;
+			default:
+				// Close the rest
+				dprintf("Unmapping mrest from %d (len %d) while max of nrest is %d", (i+1), nrest-(i+1), nrest);
+				if(i<nrest-1) unmap_all(mrest+ (i+1), nrest- (i+1));
+				goto end;
+		}
+		dprintf("Ident %d OK", tasks[i].ithis);
+	}
+end:
+	*tasks[0].othis = rval;	
+}
+#endif
+
 int main(int argc, char** argv)
 {
 	_prog_name = argv[0];
@@ -91,7 +142,46 @@ int main(int argc, char** argv)
 	}
 	dprintf("All map okay");
 	register int rval=0;
+#ifdef _RUN_THREADED	
+	if(sched_should(nrest) || _RUN_THREADED) {
+		dprintf("Running multi-threaded");
+		_Atomic int rvals[nrest];
+		vec_t vtask_args = vec_new_with_cap(sizeof(struct t_task), nrest);
+		struct t_task* task_args = vtask_args.ptr;
+		for (int i=0;i<nrest;i++) {
+			rvals[i] = 0;
+			task_args[i] = (struct t_task){
+				.ithis = i,
+				.fthis = frest[i],
+				.mthis = mrest[i],
+				.map1 = &map1,
+				.othis = &rvals[i],
+			};
+		}
+		vtask_args.len = (size_t)nrest;
 
+		tasklist_t threads;
+		if(!sched_spawn(vtask_args, &proc_thread, &threads)) {
+			fprintf(stderr, "Failed to spawn tasks\n");
+			abort(); //no clear way to exit gracefully from this...
+		}
+		vec_free(vtask_args);
+
+		dprintf("Children spawned");
+
+		sched_wait(&threads);
+
+		for (register int i=0;i<nrest;i++) {
+			if(rvals[i]) {
+				rval = rvals[i];
+				break;
+			}
+		}
+
+		goto end;
+	} else {
+#endif
+		dprintf("Running single threaded");
 	for(register int i=0;i<nrest;i++) {
 		dprintf("Checking %d \"%s\"", i, frest[i]);
 		switch ((rval=compare_then_close(&map1, mrest[i]))) {
@@ -106,11 +196,16 @@ int main(int argc, char** argv)
 	}
 
 end:
+	dprintf("Unmapping `map1`");
 	if(!unmap_and_close(map1)) {
 		fprintf(stderr, "Failed to unmap and close %s", f1);
 		rval=-1;
 	}
 
 	dprintf("Final rval is %d", rval);
+
 	return rval;
+#ifdef _RUN_THREADED
+	}
+#endif
 }
