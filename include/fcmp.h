@@ -7,6 +7,8 @@
 #define _FORCE_INLINE extern inline __attribute__((gnu_inline))
 #endif
 
+#define _ALIAS __attribute__((may_alias))
+
 #ifdef DEBUG
 #define __name(d) #d
 #define dprintf(fmt, ...) printf("[dbg @" __FILE__ "->%s:%d] " fmt "\n", __func__, __LINE__ __VA_OPT__(,) __VA_ARGS__)

@@ -58,7 +58,8 @@ static int compare_then_close(const mmap_t * restrict map1, mmap_t map2)
 
 #ifdef _RUN_THREADED
 struct t_task {
-	_Atomic int* othis;
+	_Atomic int* _ALIAS othis;
+	_Atomic bool* _ALIAS ocontinue;
 
 	int ithis;
 	const char* fthis;
@@ -91,6 +92,11 @@ void proc_thread(vec_t* restrict v_tasks)
 	register int rval=0;
 	for(register int i=0;i<nrest;i++)
 	{
+		if (! *tasks[0].ocontinue) {
+			dprintf("Signalled to drop rest of tasks");
+			unmap_all(mrest+i, nrest-i);
+			break;
+		}
 		dprintf("Checking %d \"%s\"", tasks[i].ithis, frest[i]);
 		switch ((rval=compare_then_close(map1, mrest[i]))) {
 			case 0: break;
@@ -98,12 +104,13 @@ void proc_thread(vec_t* restrict v_tasks)
 				// Close the rest
 				dprintf("Unmapping mrest from %d (len %d) while max of nrest is %d", (i+1), nrest-(i+1), nrest);
 				if(i<nrest-1) unmap_all(mrest+ (i+1), nrest- (i+1));
+				*tasks[0].ocontinue = false;
 				goto end;
 		}
 		dprintf("Ident %d OK", tasks[i].ithis);
 	}
 end:
-	*tasks[0].othis = rval;	
+	*tasks[0].othis = rval;
 }
 #endif
 
@@ -146,6 +153,7 @@ int main(int argc, char** argv)
 	if(sched_should(nrest) || _RUN_THREADED) {
 		dprintf("Running multi-threaded");
 		_Atomic int rvals[nrest];
+		_Atomic bool sync_cont = true;
 		vec_t vtask_args = vec_new_with_cap(sizeof(struct t_task), nrest);
 		struct t_task* task_args = vtask_args.ptr;
 		for (int i=0;i<nrest;i++) {
@@ -156,6 +164,7 @@ int main(int argc, char** argv)
 				.mthis = mrest[i],
 				.map1 = &map1,
 				.othis = &rvals[i],
+				.ocontinue = &sync_cont,
 			};
 		}
 		vtask_args.len = (size_t)nrest;
@@ -194,7 +203,9 @@ int main(int argc, char** argv)
 		}
 		dprintf("Ident %d OK", i); 
 	}
-
+#ifdef _RUN_THREADED
+	}
+#endif
 end:
 	dprintf("Unmapping `map1`");
 	if(!unmap_and_close(map1)) {
@@ -205,7 +216,4 @@ end:
 	dprintf("Final rval is %d", rval);
 
 	return rval;
-#ifdef _RUN_THREADED
-	}
-#endif
 }
