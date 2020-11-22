@@ -4,7 +4,7 @@
 
 #include <vector.h>
 
-__attribute__((gnu_inline)) inline static void* die_if_null(void* ptr)
+_FORCE_INLINE void* die_if_null(void* ptr)
 {
 	if (!ptr) abort();
 	return ptr;

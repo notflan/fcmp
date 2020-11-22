@@ -12,6 +12,12 @@ typedef struct {
 	void* ptr;
 } vec_t;
 
+#ifdef DEBUG
+#define _FORCE_INLINE static inline __attribute__((gnu_inline))
+#else
+#define _FORCE_INLINE extern inline __attribute__((gnu_inline))
+#endif
+
 #define VEC_DEFAULT_CAP 16
 
 vec_t vec_new_with_cap(size_t elem, size_t cap);
@@ -20,7 +26,7 @@ bool vec_pop(vec_t* restrict self, void* restrict item);
 void* vec_index(const vec_t* restrict self, size_t i);
 vec_t vec_clone(const vec_t* restrict self);
 
-__attribute__((gnu_inline)) inline extern vec_t vec_new(size_t elem) { return vec_new_with_cap(elem, VEC_DEFAULT_CAP); }
-__attribute__((gnu_inline)) inline extern void vec_free(vec_t v) { free(v.ptr); }
+_FORCE_INLINE vec_t vec_new(size_t elem) { return vec_new_with_cap(elem, VEC_DEFAULT_CAP); }
+_FORCE_INLINE void vec_free(vec_t v) { free(v.ptr); }
 
 #endif /* _VECTOR_H */

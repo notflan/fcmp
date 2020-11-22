@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <map.h>
+#include <vector.h>
 
 static const char* _prog_name = "fcmp";
 
@@ -13,14 +14,14 @@ static const char* _prog_name = "fcmp";
 #define dprintf(fmt, ...)
 #endif
 
-__attribute__((noreturn)) static void usage() 
+__attribute__((noreturn, noinline)) void usage() 
 {
 	fprintf(stderr, "fcmp: compare files for identity\n");
 	fprintf(stderr, "usage: %s <files...>\n", _prog_name);
 	exit(-1);
 }
 
-__attribute__((always_inline)) static inline const void* die_if_null(const void* ptr)
+_FORCE_INLINE const void* die_with_usage_if_null(const void* ptr)
 {
 	if (!ptr) usage();
 	else return ptr;
@@ -62,11 +63,11 @@ int main(int argc, char** argv)
 	const int nrest = argc-2;
 	if (nrest==0) usage();
 	dprintf("There are %d extra files to chk", nrest);
-	const char* f1 = die_if_null(argv[1]);
+	const char* f1 = die_with_usage_if_null(argv[1]);
 	const char* frest[nrest];
 
 	for (register int i=0;i<nrest;i++) {
-		frest[i] = die_if_null(argv[2+i]);
+		frest[i] = die_with_usage_if_null(argv[2+i]);
 		dprintf("frest[%d] = \"%s\"", i, frest[i]);
 	}
 
