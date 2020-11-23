@@ -66,7 +66,7 @@ pgo-generate: $(PGO_OBJ)
 pgo-reset:
 	find ./prof -name \*.gcda -exec rm {} +
 
-pgo-profile: | pgo-reset pgo-generate
+pgo-profile: | pgo-generate pgo-reset
 	#./profile/gen $(PROF_LARGE_BOUND) "$(PROF_LOCATION)/large"
 	#./profile/gen $(PROF_SMALL_BOUND) "$(PROF_LOCATION)/small"
 	for i in {1..$(PROF_ITERATIONS)}; do \
