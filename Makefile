@@ -3,12 +3,12 @@ INCLUDE=include
 
 PROJECT=fcmp
 
-OPT_FLAGS?= -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
+OPT_FLAGS?= -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
 
 FEAT_CFLAGS?= -D_RUN_THREADED=0
 FEAT_LDFLAGS?= -lpthread
 
-RELEASE_CFLAGS?=  -O3 -march=native -flto $(OPT_FLAGS)
+RELEASE_CFLAGS?=  -O3 -flto $(OPT_FLAGS)
 RELEASE_LDFLAGS?= -O3 -flto
 
 DEBUG_CFLAGS?=  -DDEBUG -O0 -g
@@ -79,6 +79,11 @@ pgo-profile: | pgo-reset pgo-generate
 		./pgo-generate $(PROF_LOCATION)/large/unmatching/* & > $(PROF_LOCATION)/stdout; \
 		./pgo-generate $(PROF_LOCATION)/small/matching/* & > $(PROF_LOCATION)/stdout; \
 		./pgo-generate $(PROF_LOCATION)/small/unmatching/* & > $(PROF_LOCATION)/stdout; \
+		\
+		./pgo-generate $(PROF_LOCATION)/small/matching/{1,2} & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/large/matching/{1,2} & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/small/unmatching/{1,2} & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/large/unmatching/{1,2} & > $(PROF_LOCATION)/stdout; \
 		wait; \
 		rm -rf $(PROF_LOCATION)/{large,small}; \
 	done
