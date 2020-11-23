@@ -3,7 +3,7 @@ INCLUDE=include
 
 PROJECT=fcmp
 
-OPT_FLAGS+= -fgraphite
+OPT_FLAGS+= -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
 
 FEAT_CFLAGS?= -D_RUN_THREADED=0
 FEAT_LDFLAGS?= -lpthread
@@ -19,13 +19,12 @@ LDFLAGS+= $(FEAT_LDFLAGS)
 
 # PGO specific vars
 
-PROF_ITERATIONS=10
+PROF_ITERATIONS=50
 PROF_LARGE_BOUND= $$(( 1024 * 1024 * 10 ))
 PROF_SMALL_BOUND= $$(( 1024 * 10 ))
 PROF_LOCATION?=/tmp/fcmp-pgo
 
 PROF_FLAGS = -fprofile-generate
-
 
 OBJ = $(addprefix obj/,$(SRC:.c=.o))
 PGO_OBJ = $(addprefix prof/,$(SRC:.c=.o))
@@ -67,7 +66,7 @@ pgo-generate: $(PGO_OBJ)
 pgo-reset:
 	find ./prof -name \*.gcda -exec rm {} +
 
-pgo-profile: pgo-reset pgo-generate
+pgo-profile: | pgo-reset pgo-generate
 	#./profile/gen $(PROF_LARGE_BOUND) "$(PROF_LOCATION)/large"
 	#./profile/gen $(PROF_SMALL_BOUND) "$(PROF_LOCATION)/small"
 	for i in {1..$(PROF_ITERATIONS)}; do \
@@ -76,10 +75,11 @@ pgo-profile: pgo-reset pgo-generate
 		printf "Iteration $$i of $(PROF_ITERATIONS)\r"; \
 		./profile/gen $(PROF_LARGE_BOUND) "$(PROF_LOCATION)/large" >> /dev/null; \
 		./profile/gen $(PROF_SMALL_BOUND) "$(PROF_LOCATION)/small" >> /dev/null; \
-		./pgo-generate $(PROF_LOCATION)/large/matching/* > $(PROF_LOCATION)/stdout; \
-		./pgo-generate $(PROF_LOCATION)/large/unmatching/* > $(PROF_LOCATION)/stdout; \
-		./pgo-generate $(PROF_LOCATION)/small/matching/* > $(PROF_LOCATION)/stdout; \
-		./pgo-generate $(PROF_LOCATION)/small/unmatching/*  > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/large/matching/* & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/large/unmatching/* & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/small/matching/* & > $(PROF_LOCATION)/stdout; \
+		./pgo-generate $(PROF_LOCATION)/small/unmatching/* & > $(PROF_LOCATION)/stdout; \
+		wait; \
 		rm -rf $(PROF_LOCATION)/{large,small}; \
 	done
 	@echo ""
@@ -88,7 +88,7 @@ pgo-profile: pgo-reset pgo-generate
 
 pgo-use: CFLAGS := $(RELEASE_CFLAGS) $(CFLAGS)
 pgo-use: LDFLAGS := $(RELEASE_LDFLAGS) $(LDFLAGS)
-pgo-use: PROF_FLAGS = -fprofile-use
+pgo-use: PROF_FLAGS = -fprofile-use -fprofile-correction
 pgo-use: $(PGO_OBJ)
 	$(CC) $^ $(CFLAGS) $(PROF_FLAGS) -o $@ $(LDFLAGS) $(PROF_FLAGS)
 
