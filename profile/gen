@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Generate 100 matching
+bound=$1
+
+ITERATIONS=${ITERATIONS:-100}
+BREAK_AT=50
+
+cd $2 || exit 1
+
+echo ">>> Generating ${ITERATIONS} matching files"
+mkdir matching
+dd if=/dev/urandom of=./matching/0 bs=$bound count=1 >> /dev/null 2>&1 || exit 1
+pushd matching >>/dev/null
+	for i in $(seq 1 ${ITERATIONS}); do
+		cp -f 0 $i || exit 1
+	done
+popd >>/dev/null
+
+echo ">>> Generatig ${ITERATIONS} with unmatching file"
+mkdir unmatching
+dd if=/dev/urandom of=./unmatching/0 bs=$bound count=1 >> /dev/null 2>&1 || exit 1
+pushd unmatching >> /dev/null
+	for i in $(seq 1 ${ITERATIONS}); do
+		if [[ $i == ${BREAK_AT} ]]; then
+			echo " $i < unmatching"
+			dd if=/dev/urandom of=$i bs=$bound count=1 >>/dev/null 2>&1 || exit
+		else
+			cp -f 0 $i || exit 1
+		fi
+	done
+popd >> /dev/null
+echo ">>> Generated in $2"
