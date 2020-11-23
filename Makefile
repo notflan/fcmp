@@ -76,7 +76,8 @@ pgo-profile: | pgo-reset pgo-generate
 		./pgo-generate $(PROF_LOCATION)/large/unmatching > $(PROF_LOCATION)/stdout; \
 		./pgo-generate $(PROF_LOCATION)/small/matching > $(PROF_LOCATION)/stdout; \
 		./pgo-generate $(PROF_LOCATION)/small/unmatching  > $(PROF_LOCATION)/stdout; \
-		#TODO: More combinations \
+		#TODO: More combinations 
+		rm -rf $(PROF_LOCATION)/{large,small} \
 	done
 	rm -rf $(PROF_LOCATION)
 	rm pgo-generate
