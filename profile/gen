@@ -8,7 +8,7 @@ BREAK_AT=50
 
 cd $2 || exit 1
 
-echo ">>> Generating ${ITERATIONS} matching files"
+echo ">>> Generating ${ITERATIONS} matching files at $2/matching"
 mkdir matching
 dd if=/dev/urandom of=./matching/0 bs=$bound count=1 >> /dev/null 2>&1 || exit 1
 pushd matching >>/dev/null
@@ -17,7 +17,7 @@ pushd matching >>/dev/null
 	done
 popd >>/dev/null
 
-echo ">>> Generatig ${ITERATIONS} with unmatching file"
+echo ">>> Generatig ${ITERATIONS} with unmatching files at $2/unmatching"
 mkdir unmatching
 dd if=/dev/urandom of=./unmatching/0 bs=$bound count=1 >> /dev/null 2>&1 || exit 1
 pushd unmatching >> /dev/null
