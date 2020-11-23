@@ -3,7 +3,7 @@ INCLUDE=include
 
 PROJECT=fcmp
 
-OPT_FLAGS+= -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
+OPT_FLAGS?= -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
 
 FEAT_CFLAGS?= -D_RUN_THREADED=0
 FEAT_LDFLAGS?= -lpthread
