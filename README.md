@@ -38,7 +38,7 @@ Build with default optimisations using `make release`, it will output a stripped
 
 ### Notes
 * The Makefile uses variables `RELEASE_CFLAGS` and `RELEASE_LDFLAGS` to apply optimisations (and `DEBUG_CFLAGS` + `DEBUG_LDFLAGS` for extra compiler flags with the debug target). If needed you can set these yourself to prevent the defaults.
-* The default `RELEASE_CFLAGS` specify `-march=native` which may be undesireable for you. Set the variable or modify the Makefile if you need to remove this.
+* The default `OPT_FLAGS` specify `-march=native` which may be undesireable for you. Set the variable or modify the Makefile if you need to remove this.
 
 ## PGO
 Building with Profile Guided Optimisation is supported with the `pgo` Makefile target. It uses the same rules as the `release` target and outputs a binary to `fcmp-pgo`.
