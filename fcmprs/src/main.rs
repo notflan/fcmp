@@ -1,3 +1,6 @@
+
+#![allow(dead_code)]
+
 #[cfg(feature="threads")] use rayon::prelude::*;
 use std::{
     path::Path,
@@ -18,8 +21,24 @@ mod error;
 use error::ResultPrintExt as _;
 
 mod map;
+use map::MappedFile as _;
 
+#[derive(Debug)]
+/// There was a non-matching file
 struct UnmatchError;
+
+const _:() = {
+    use std::{fmt,error};
+    impl error::Error for UnmatchError{}
+    impl fmt::Display for UnmatchError
+    {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+	{
+	    write!(f, "files did not match")
+	}
+    }
+    ()
+};
 
 fn main() {
     let (map1, rest) = {	
@@ -39,10 +58,9 @@ fn main() {
 		let path = Path::new(&filename);
 		if path.exists() && path.is_file() {
 		    map::map(path).discard_msg(format!("Failed to map file {}", filename))
-			.or_else(|| { ok = false; None })
 		} else {
 		    eprintln!("File {} does not exist or is not a normal file", filename);
-		    ok = false;
+		    ok=false;
 		    None
 		}
 	    }).collect();
@@ -57,7 +75,7 @@ fn main() {
 			    .map(|map| {
 				if slice == map.as_slice() {
 				    Ok(())
-				}else{
+				} else {
 				    Err(UnmatchError)
 				}
 			    })

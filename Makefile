@@ -7,6 +7,7 @@ OPT_FLAGS_RUST?= -C target-cpu=native
 OPT_FLAGS?= -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
 	    -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block
 
+FEAT_RUST?= threads
 FEAT_CFLAGS?= -D_RUN_THREADED=0
 FEAT_LDFLAGS?= -lpthread
 
@@ -40,6 +41,9 @@ debug: | dirs $(PROJECT)-debug
 .PHONY: pgo
 pgo: | dirs $(PROJECT)-pgo
 
+.PHONY: rs
+rs: | $(PROJECT)-rs
+
 dirs:
 	@mkdir -p {obj,prof}/src
 
@@ -59,6 +63,11 @@ $(PROJECT)-debug: CFLAGS := $(DEBUG_CFLAGS) $(CFLAGS)
 $(PROJECT)-debug: LDFLAGS := $(DEBUG_LDFLAGS) $(LDFLAGS)
 $(PROJECT)-debug: $(OBJ)
 	$(CC) $^ $(CFLAGS) -o $@ $(LDFLAGS)
+
+
+$(PROJECT)-rs:
+	cd fcmprs && OPT_FLAGS="$(OPT_FLAGS_RUST)" CARGO_FEATURES="$(FEAT_RUST)" $(MAKE)
+	cp -f ./fcmprs/target/release/fcmprs $@
 
 pgo-generate: CFLAGS := $(RELEASE_CFLAGS) $(CFLAGS)
 pgo-generate: LDFLAGS := $(RELEASE_LDFLAGS) $(LDFLAGS)
@@ -107,6 +116,9 @@ $(PROJECT)-pgo: pgo-profile
 	mv pgo-use $@
 	strip $@
 
+
+
 clean:
+	cd fcmp && make clean
 	rm -rf {obj,prof}
-	rm -f $(PROJECT)-{release,debug,pgo}
+	rm -f $(PROJECT)-{release,debug,pgo,rs}
