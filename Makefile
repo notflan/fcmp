@@ -3,7 +3,9 @@ INCLUDE=include
 
 PROJECT=fcmp
 
-OPT_FLAGS?= -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4
+OPT_FLAGS_RUST?= -C target-cpu=native
+OPT_FLAGS?= -march=native -fgraphite -fopenmp -floop-parallelize-all -ftree-parallelize-loops=4 \
+	    -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block
 
 FEAT_CFLAGS?= -D_RUN_THREADED=0
 FEAT_LDFLAGS?= -lpthread
