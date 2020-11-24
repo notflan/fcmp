@@ -31,7 +31,7 @@ fn main() {
 	}
     };
 
-    std::process::exit(dbg!{
+    std::process::exit({
 	if let Some(map1) = map::map(&map1).discard_msg(format!("Failed to map file {}", map1)) {
 	    let slice = map1.as_slice();
 	    let mut ok = true;

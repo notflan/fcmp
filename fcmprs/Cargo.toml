@@ -11,6 +11,12 @@ default = ["threads"]
 
 threads = ["rayon"]
 
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
 [dependencies]
 cfg-if = "1.0.0"
 memmap = "0.7.0"
