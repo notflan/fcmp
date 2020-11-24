@@ -4,3 +4,6 @@ fcmp-*
 test/
 perf.*
 flamegraph.svg
+
+Cargo.lock
+target
