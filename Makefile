@@ -119,6 +119,6 @@ $(PROJECT)-pgo: pgo-profile
 
 
 clean:
-	cd fcmp && make clean
+	cd fcmprs && make clean
 	rm -rf {obj,prof}
 	rm -f $(PROJECT)-{release,debug,pgo,rs}
