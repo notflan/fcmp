@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 #[cfg(feature="threads")] use rayon::prelude::*;
+#[allow(unused_imports)]
 use std::{
     path::Path,
     io, fs::{self, OpenOptions,},
@@ -39,7 +40,7 @@ fn main() {
     std::process::exit({
 	if let Some(map1) = map::map(&map1).discard_msg(format!("Failed to map file {}", map1)) {
 	    let slice = map1.as_slice();
-	    let map1_sz: u64 = slice.len().try_into().expect("File size could not fit into u64. This should never happen.");
+	    #[cfg(feature="threads")] let map1_sz: u64 = slice.len().try_into().expect("File size could not fit into u64. This should never happen."); // For now, non-threaded mode doesn't use this.
 	    let mut ok = true;
 	    let chk: SmallVec<[_; 32]> = rest.filter_map(|filename| {
 		let path = Path::new(&filename);
