@@ -5,6 +5,7 @@
 use std::{
     path::Path,
     io, fs::{self, OpenOptions,},
+    convert::TryInto,
 };
 use smallvec::SmallVec;
 use cfg_if::cfg_if;
@@ -23,22 +24,7 @@ use error::ResultPrintExt as _;
 mod map;
 use map::MappedFile as _;
 
-#[derive(Debug)]
-/// There was a non-matching file
-struct UnmatchError;
-
-const _:() = {
-    use std::{fmt,error};
-    impl error::Error for UnmatchError{}
-    impl fmt::Display for UnmatchError
-    {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
-	{
-	    write!(f, "files did not match")
-	}
-    }
-    ()
-};
+use error::UnmatchError;
 
 fn main() {
     let (map1, rest) = {	
@@ -53,6 +39,7 @@ fn main() {
     std::process::exit({
 	if let Some(map1) = map::map(&map1).discard_msg(format!("Failed to map file {}", map1)) {
 	    let slice = map1.as_slice();
+	    let map1_sz: u64 = slice.len().try_into().expect("File size could not fit into u64. This should never happen.");
 	    let mut ok = true;
 	    let chk: SmallVec<[_; 32]> = rest.filter_map(|filename| {
 		let path = Path::new(&filename);
@@ -73,24 +60,34 @@ fn main() {
 		    if #[cfg(feature="threads")] {
 			match chk.into_par_iter()
 			    .map(|map| {
+				if let Ok(stat) = map.as_file().metadata() {
+				    if stat.len() != map1_sz {
+					return Err(UnmatchError::Size);
+				    }
+				    if !stat.is_file() {
+					return Err(UnmatchError::Unknown);
+				    }
+				}
 				if slice == map.as_slice() {
 				    Ok(())
 				} else {
-				    Err(UnmatchError)
+				    Err(UnmatchError::Data)
 				}
 			    })
 			    .try_reduce_with(|_, _| Ok(()))
 			{
 			    Some(Ok(_)) => 0,
-			    Some(Err(_)) => 1,
+			    Some(Err(UnmatchError::Data)) => 1,
+			    Some(Err(UnmatchError::Size)) => 2,
 			    None => usage(),
+			    _ => -1,
 			}
 		    } else {
 			match chk.into_iter()
 			    .map(|map| {
 				slice == map.as_slice()
 			    })
-			    .try_fold((false, true), |(_, a), b| if a && b {Ok((true, true))} else {Err(UnmatchError)})
+			    .try_fold((false, true), |(_, a), b| if a && b {Ok((true, true))} else {Err(UnmatchError::Data)})
 			{
 			    Ok((true, _)) => 0,
 			    Ok((false, _)) => usage(),
