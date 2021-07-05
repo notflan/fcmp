@@ -10,7 +10,25 @@
 
 #define FILEMODE S_IRWXU | S_IRGRP | S_IROTH
 
+#define DEFAULT_ADVICE MADV_SEQUENTIAL
+
+#define ADVICE DEFAULT_ADVICE | MADV_WILLNEED
+
 #include <map.h>
+
+static inline int _map_advise(const mmap_t* restrict map, int adv)
+{
+	return madvise(map->ptr, map->len, adv);
+}
+
+int set_preload_map(mmap_t* restrict map)
+{
+	if(_map_advise(map, ADVICE) != 0) {
+		perror("failed to advise kernel about mapped page(s)");
+		return 0;
+	}
+	return 1;
+}
 
 int open_and_map(const char* file, mmap_t* restrict ptr)
 {
@@ -27,7 +45,7 @@ int open_and_map(const char* file, mmap_t* restrict ptr)
 		return 0;
 	}
 
-	register struct mmap map = { .fd = fd, .ptr = NULL, .len = st.st_size };
+	struct mmap map = { .fd = fd, .ptr = NULL, .len = st.st_size };
 
 	if ((map.ptr = mmap(NULL, map.len, PROT_READ, MAP_SHARED,fd, 0)) == MAP_FAILED) {
 		perror("mmap() failed");
@@ -35,8 +53,15 @@ int open_and_map(const char* file, mmap_t* restrict ptr)
 		return 0;
 	}
 
+	if(_map_advise(&map, DEFAULT_ADVICE) != 0) {
+		perror("madvise(): failed to set default advice");
+		//XXX: Should this be a hard error, or should we return the map if this fails anyway?
+		unmap_and_close(map);
+		return 0;
+	}
+	
 	*ptr = map;
-
+	
 	return 1;
 }
 

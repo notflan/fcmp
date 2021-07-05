@@ -56,6 +56,12 @@ static int compare_then_close(const mmap_t * restrict map1, mmap_t map2)
 	return rval;
 }
 
+static void prep_map(mmap_t* restrict map)
+{
+	if(!set_preload_map(map))
+		fprintf(stderr, "Error: failed to prep map %p (%d), continuing anyway\n", map->ptr, map->fd);
+}
+
 #ifdef _RUN_THREADED
 struct t_task {
 	_Atomic int* _ALIAS othis;
@@ -81,7 +87,10 @@ void proc_thread(vec_t* restrict v_tasks)
 	{
 		for(register int i=0;i<v_tasks->len;i++)
 		{
+			// Copy map into local buffer
 			mrest[i] = tasks[i].mthis;
+			// Prep this map
+			prep_map(&mrest[i]);
 #ifdef DEBUG
 			frest[i] = tasks[i].fthis;
 #endif
@@ -137,6 +146,9 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	// Prep map 1
+	prep_map(&map1);
+
 	for(register int i=0;i<nrest;i++) {
 		const char* f2 = frest[i];
 		dprintf("Attempting to map %d (%s)", i, f2);
@@ -145,7 +157,11 @@ int main(int argc, char** argv)
 			unmap_and_close(map1);
 			unmap_all(mrest, i);
 			return -1;
-		}
+		} 
+#ifdef _RUN_THREADED
+		// Prep the new map immediately if single threaded.
+		else if(! (sched_should(nrest) || _RUN_THREADED)) prep_map(&mrest[i]);
+#endif
 	}
 	dprintf("All map okay");
 	register int rval=0;
@@ -157,7 +173,10 @@ int main(int argc, char** argv)
 		vec_t vtask_args = vec_new_with_cap(sizeof(struct t_task), nrest);
 		struct t_task* task_args = vtask_args.ptr;
 		for (int i=0;i<nrest;i++) {
+			// Set default return value for task (0).
 			rvals[i] = 0;
+
+			// Set task params
 			task_args[i] = (struct t_task){
 				.ithis = i,
 				.fthis = frest[i],

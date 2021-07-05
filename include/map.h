@@ -17,6 +17,7 @@ typedef struct mmap {
 
 int open_and_map(const char* file, mmap_t* restrict ptr);
 int unmap_and_close(mmap_t map);
+int set_preload_map(mmap_t* restrict map);
 
 #ifdef _cplusplus
 }

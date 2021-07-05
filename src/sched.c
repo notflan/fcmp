@@ -28,7 +28,9 @@ static void* _spawn(void* _arg)
 
 bool sched_should(size_t ntasks)
 {
-	register size_t num = num_cpus();
+	static size_t num = 0;
+	// XXX: This is not thread-safe, but this function is only ever called by the main thread, so...
+	if(!num) num = num_cpus();
 	return (num > 1 && ntasks > 1);
 }
 
