@@ -11,7 +11,7 @@
 
 #ifdef DEBUG
 #define __name(d) #d
-#define dprintf(fmt, ...) printf("[dbg @" __FILE__ "->%s:%d] " fmt "\n", __func__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+#define dprintf(fmt, ...) printf("[dbg @" __FILE__ "->%s:%d] " fmt "\n", __func__, __LINE__, ## __VA_ARGS__)
 #else
 #define dprintf(fmt, ...)
 #endif

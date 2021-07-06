@@ -14,6 +14,8 @@
 
 #define ADVICE DEFAULT_ADVICE | MADV_WILLNEED
 
+#define UNADVICE MADV_NORMAL | MADV_COLD
+
 #include <map.h>
 
 static inline int _map_advise(const mmap_t* restrict map, int adv)
@@ -21,10 +23,19 @@ static inline int _map_advise(const mmap_t* restrict map, int adv)
 	return madvise(map->ptr, map->len, adv);
 }
 
+int unset_preload_map(mmap_t* restrict map, int freeing)
+{
+	if(_map_advise(map, UNADVICE | (freeing ? MADV_DONTNEED : 0)) != 0) {
+		perror("failed to advise kernel to drop mapped page(s)");
+		return 0;
+	}
+	return 1;
+}
+
 int set_preload_map(mmap_t* restrict map)
 {
 	if(_map_advise(map, ADVICE) != 0) {
-		perror("failed to advise kernel about mapped page(s)");
+		perror("failed to advise kernel to preload mapped page(s)");
 		return 0;
 	}
 	return 1;

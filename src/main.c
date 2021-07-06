@@ -27,6 +27,17 @@ _FORCE_INLINE const void* die_with_usage_if_null(const void* ptr)
 	else return ptr;
 }
 
+static void unprep_map(mmap_t* restrict map, bool free)
+{
+	//TODO: Should we actually bother to call this before unmapping?
+	
+	if(!unset_preload_map(map, (int)free))
+		fprintf(stderr, "Error: failed to unprep map %p (%d)%s, continuing anyway\n",
+			map->ptr, map->fd,
+			(free ? " before closing" : ""));
+	else dprintf("unprep'd %p (%d)", map->ptr, map->fd);
+}
+
 static int unmap_all(mmap_t ptrs[], size_t len)
 {
 	register int rval=1;
@@ -40,6 +51,7 @@ static int unmap_all(mmap_t ptrs[], size_t len)
 	}
 	return rval;
 }
+
 
 static int compare_then_close(const mmap_t * restrict map1, mmap_t map2)
 {
@@ -60,6 +72,7 @@ static void prep_map(mmap_t* restrict map)
 {
 	if(!set_preload_map(map))
 		fprintf(stderr, "Error: failed to prep map %p (%d), continuing anyway\n", map->ptr, map->fd);
+	else dprintf("prep'd %p (%d)", map->ptr, map->fd);
 }
 
 #ifdef _RUN_THREADED
@@ -198,6 +211,8 @@ int main(int argc, char** argv)
 		dprintf("Children spawned");
 
 		sched_wait(&threads);
+		// Waited, we can now unprep map1
+		unprep_map(&map1, true);
 
 		for (register int i=0;i<nrest;i++) {
 			if(rvals[i]) {
